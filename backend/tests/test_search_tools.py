@@ -1,9 +1,9 @@
 """Tests for CourseSearchTool, CourseOutlineTool, and ToolManager"""
-import pytest
+
 import json
 from unittest.mock import Mock
-from search_tools import CourseSearchTool, CourseOutlineTool, ToolManager, Tool
-from vector_store import SearchResults
+
+from search_tools import CourseOutlineTool, CourseSearchTool, ToolManager
 
 
 class TestCourseSearchTool:
@@ -17,9 +17,7 @@ class TestCourseSearchTool:
 
         # Assert search was called
         mock_vector_store.search.assert_called_once_with(
-            query="MCP basics",
-            course_name=None,
-            lesson_number=None
+            query="MCP basics", course_name=None, lesson_number=None
         )
 
         # Assert result is formatted correctly
@@ -29,8 +27,11 @@ class TestCourseSearchTool:
 
         # Assert sources are tracked
         assert len(tool.last_sources) == 2
-        assert tool.last_sources[0]['text'] == 'MCP: Build Rich-Context AI Apps with Anthropic - Lesson 1'
-        assert tool.last_sources[0]['link'] is not None
+        assert (
+            tool.last_sources[0]["text"]
+            == "MCP: Build Rich-Context AI Apps with Anthropic - Lesson 1"
+        )
+        assert tool.last_sources[0]["link"] is not None
 
     def test_search_with_course_filter(self, mock_vector_store):
         """Test search filtered by course name"""
@@ -40,9 +41,7 @@ class TestCourseSearchTool:
 
         # Assert search called with course filter
         mock_vector_store.search.assert_called_once_with(
-            query="server implementation",
-            course_name="MCP",
-            lesson_number=None
+            query="server implementation", course_name="MCP", lesson_number=None
         )
 
         assert "MCP: Build Rich-Context AI Apps with Anthropic" in result
@@ -55,9 +54,7 @@ class TestCourseSearchTool:
 
         # Assert search called with lesson filter
         mock_vector_store.search.assert_called_once_with(
-            query="introduction",
-            course_name=None,
-            lesson_number=1
+            query="introduction", course_name=None, lesson_number=1
         )
 
     def test_search_with_combined_filters(self, mock_vector_store):
@@ -68,9 +65,7 @@ class TestCourseSearchTool:
 
         # Assert both filters applied
         mock_vector_store.search.assert_called_once_with(
-            query="protocol",
-            course_name="MCP",
-            lesson_number=2
+            query="protocol", course_name="MCP", lesson_number=2
         )
 
     def test_empty_results_handling(self, mock_vector_store, empty_search_results):
@@ -126,22 +121,22 @@ class TestCourseSearchTool:
 
         # Verify source structure
         source = tool.last_sources[0]
-        assert 'text' in source
-        assert 'link' in source
+        assert "text" in source
+        assert "link" in source
 
         # Verify lesson link is included
-        assert source['link'] is not None
+        assert source["link"] is not None
 
     def test_get_tool_definition(self):
         """Test tool definition is correctly formatted"""
         tool = CourseSearchTool(Mock())
         definition = tool.get_tool_definition()
 
-        assert definition['type'] == 'function'
-        assert definition['function']['name'] == 'search_course_content'
-        assert 'description' in definition['function']
-        assert 'parameters' in definition['function']
-        assert 'query' in definition['function']['parameters']['properties']
+        assert definition["type"] == "function"
+        assert definition["function"]["name"] == "search_course_content"
+        assert "description" in definition["function"]
+        assert "parameters" in definition["function"]
+        assert "query" in definition["function"]["parameters"]["properties"]
 
 
 class TestCourseOutlineTool:
@@ -188,7 +183,7 @@ class TestCourseOutlineTool:
 
     def test_metadata_unavailable(self, mock_vector_store):
         """Test handling when course exists but metadata missing"""
-        mock_vector_store.course_catalog.get.return_value = {'metadatas': []}
+        mock_vector_store.course_catalog.get.return_value = {"metadatas": []}
         tool = CourseOutlineTool(mock_vector_store)
 
         result = tool.execute(course_name="MCP")
@@ -227,16 +222,16 @@ class TestCourseOutlineTool:
 
         # Verify source content
         source = tool.last_sources[0]
-        assert "Course Outline" in source['text']
-        assert source['link'] is not None
+        assert "Course Outline" in source["text"]
+        assert source["link"] is not None
 
     def test_malformed_json_handling(self, mock_vector_store, sample_course_metadata):
         """Test handling of invalid lessons_json"""
         # Create metadata with invalid JSON
         bad_metadata = sample_course_metadata.copy()
-        bad_metadata['lessons_json'] = "invalid json {"
+        bad_metadata["lessons_json"] = "invalid json {"
 
-        mock_vector_store.course_catalog.get.return_value = {'metadatas': [bad_metadata]}
+        mock_vector_store.course_catalog.get.return_value = {"metadatas": [bad_metadata]}
         tool = CourseOutlineTool(mock_vector_store)
 
         result = tool.execute(course_name="MCP")
@@ -250,10 +245,10 @@ class TestCourseOutlineTool:
         tool = CourseOutlineTool(Mock())
         definition = tool.get_tool_definition()
 
-        assert definition['type'] == 'function'
-        assert definition['function']['name'] == 'get_course_outline'
-        assert 'course structure' in definition['function']['description'].lower()
-        assert 'course_name' in definition['function']['parameters']['properties']
+        assert definition["type"] == "function"
+        assert definition["function"]["name"] == "get_course_outline"
+        assert "course structure" in definition["function"]["description"].lower()
+        assert "course_name" in definition["function"]["parameters"]["properties"]
 
 
 class TestToolManager:
@@ -266,8 +261,8 @@ class TestToolManager:
 
         manager.register_tool(tool)
 
-        assert 'search_course_content' in manager.tools
-        assert manager.tools['search_course_content'] == tool
+        assert "search_course_content" in manager.tools
+        assert manager.tools["search_course_content"] == tool
 
     def test_register_multiple_tools(self, mock_vector_store):
         """Test registering multiple tools"""
@@ -279,8 +274,8 @@ class TestToolManager:
         manager.register_tool(outline_tool)
 
         assert len(manager.tools) == 2
-        assert 'search_course_content' in manager.tools
-        assert 'get_course_outline' in manager.tools
+        assert "search_course_content" in manager.tools
+        assert "get_course_outline" in manager.tools
 
     def test_get_tool_definitions(self, mock_vector_store):
         """Test retrieving all tool definitions"""
@@ -292,7 +287,7 @@ class TestToolManager:
 
         assert isinstance(definitions, list)
         assert len(definitions) == 2
-        assert all('type' in d and d['type'] == 'function' for d in definitions)
+        assert all("type" in d and d["type"] == "function" for d in definitions)
 
     def test_execute_tool_success(self, mock_vector_store):
         """Test successful tool execution"""

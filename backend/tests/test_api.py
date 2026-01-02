@@ -1,6 +1,6 @@
 """Tests for FastAPI endpoints"""
+
 import pytest
-from unittest.mock import Mock
 
 
 @pytest.mark.api
@@ -25,7 +25,9 @@ class TestQueryEndpoint:
         # Verify session was created
         assert data["session_id"] == "test-session-123"
 
-    def test_query_with_session_id(self, client, sample_query_request_with_session, mock_rag_system):
+    def test_query_with_session_id(
+        self, client, sample_query_request_with_session, mock_rag_system
+    ):
         """Test query endpoint uses provided session ID"""
         response = client.post("/api/query", json=sample_query_request_with_session)
 
@@ -37,8 +39,7 @@ class TestQueryEndpoint:
 
         # Verify RAG system was called with the session
         mock_rag_system.query.assert_called_once_with(
-            "Tell me more about MCP architecture",
-            "existing-session-456"
+            "Tell me more about MCP architecture", "existing-session-456"
         )
 
     def test_query_sources_format(self, client, sample_query_request):
@@ -70,9 +71,7 @@ class TestQueryEndpoint:
     def test_query_invalid_json(self, client):
         """Test query endpoint handles invalid JSON"""
         response = client.post(
-            "/api/query",
-            data="invalid json {",
-            headers={"Content-Type": "application/json"}
+            "/api/query", data="invalid json {", headers={"Content-Type": "application/json"}
         )
 
         assert response.status_code == 422
@@ -136,7 +135,7 @@ class TestCoursesEndpoint:
         """Test courses endpoint with no courses"""
         mock_rag_system.get_course_analytics.return_value = {
             "total_courses": 0,
-            "course_titles": []
+            "course_titles": [],
         }
 
         response = client.get("/api/courses")

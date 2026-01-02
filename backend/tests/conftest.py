@@ -1,8 +1,11 @@
 """Pytest fixtures for RAG chatbot tests"""
-import pytest
-from unittest.mock import Mock, MagicMock, patch
+
 import json
+from unittest.mock import Mock
+
+import pytest
 from fastapi.testclient import TestClient
+
 from vector_store import SearchResults
 
 
@@ -10,15 +13,29 @@ from vector_store import SearchResults
 def sample_course_metadata():
     """Sample course metadata for MCP course"""
     return {
-        'title': 'MCP: Build Rich-Context AI Apps with Anthropic',
-        'instructor': 'Elie Schoppik',
-        'course_link': 'https://www.deeplearning.ai/short-courses/mcp-build-rich-context-ai-apps-with-anthropic/',
-        'lessons_json': json.dumps([
-            {'lesson_number': 0, 'lesson_title': 'Introduction', 'lesson_link': 'https://example.com/lesson0'},
-            {'lesson_number': 1, 'lesson_title': 'Why MCP', 'lesson_link': 'https://example.com/lesson1'},
-            {'lesson_number': 2, 'lesson_title': 'MCP Architecture', 'lesson_link': 'https://example.com/lesson2'},
-        ]),
-        'lesson_count': 3
+        "title": "MCP: Build Rich-Context AI Apps with Anthropic",
+        "instructor": "Elie Schoppik",
+        "course_link": "https://www.deeplearning.ai/short-courses/mcp-build-rich-context-ai-apps-with-anthropic/",
+        "lessons_json": json.dumps(
+            [
+                {
+                    "lesson_number": 0,
+                    "lesson_title": "Introduction",
+                    "lesson_link": "https://example.com/lesson0",
+                },
+                {
+                    "lesson_number": 1,
+                    "lesson_title": "Why MCP",
+                    "lesson_link": "https://example.com/lesson1",
+                },
+                {
+                    "lesson_number": 2,
+                    "lesson_title": "MCP Architecture",
+                    "lesson_link": "https://example.com/lesson2",
+                },
+            ]
+        ),
+        "lesson_count": 3,
     }
 
 
@@ -26,13 +43,16 @@ def sample_course_metadata():
 def sample_search_results():
     """Sample search results for testing"""
     return SearchResults(
-        documents=["MCP stands for Model Context Protocol", "MCP enables rich context for AI applications"],
+        documents=[
+            "MCP stands for Model Context Protocol",
+            "MCP enables rich context for AI applications",
+        ],
         metadata=[
-            {'course_title': 'MCP: Build Rich-Context AI Apps with Anthropic', 'lesson_number': 1},
-            {'course_title': 'MCP: Build Rich-Context AI Apps with Anthropic', 'lesson_number': 2}
+            {"course_title": "MCP: Build Rich-Context AI Apps with Anthropic", "lesson_number": 1},
+            {"course_title": "MCP: Build Rich-Context AI Apps with Anthropic", "lesson_number": 2},
         ],
         distances=[0.1, 0.15],
-        error=None
+        error=None,
     )
 
 
@@ -45,18 +65,18 @@ def mock_vector_store(sample_search_results, sample_course_metadata):
     mock_store.search.return_value = sample_search_results
 
     # Mock course name resolution
-    mock_store._resolve_course_name.return_value = 'MCP: Build Rich-Context AI Apps with Anthropic'
+    mock_store._resolve_course_name.return_value = "MCP: Build Rich-Context AI Apps with Anthropic"
 
     # Mock course catalog access
     mock_catalog = Mock()
-    mock_catalog.get.return_value = {
-        'metadatas': [sample_course_metadata]
-    }
+    mock_catalog.get.return_value = {"metadatas": [sample_course_metadata]}
     mock_store.course_catalog = mock_catalog
 
     # Mock link retrieval
-    mock_store.get_course_link.return_value = 'https://www.deeplearning.ai/short-courses/mcp-build-rich-context-ai-apps-with-anthropic/'
-    mock_store.get_lesson_link.return_value = 'https://example.com/lesson1'
+    mock_store.get_course_link.return_value = (
+        "https://www.deeplearning.ai/short-courses/mcp-build-rich-context-ai-apps-with-anthropic/"
+    )
+    mock_store.get_lesson_link.return_value = "https://example.com/lesson1"
 
     return mock_store
 
@@ -121,8 +141,8 @@ def mock_tool_manager():
             "function": {
                 "name": "search_course_content",
                 "description": "Search course materials",
-                "parameters": {}
-            }
+                "parameters": {},
+            },
         }
     ]
 
@@ -139,26 +159,17 @@ def mock_tool_manager():
 @pytest.fixture
 def empty_search_results():
     """Empty search results for testing no results scenario"""
-    return SearchResults(
-        documents=[],
-        metadata=[],
-        distances=[],
-        error=None
-    )
+    return SearchResults(documents=[], metadata=[], distances=[], error=None)
 
 
 @pytest.fixture
 def error_search_results():
     """Search results with error for testing error handling"""
-    return SearchResults(
-        documents=[],
-        metadata=[],
-        distances=[],
-        error="Course not found"
-    )
+    return SearchResults(documents=[], metadata=[], distances=[], error="Course not found")
 
 
 # API Testing Fixtures
+
 
 @pytest.fixture
 def mock_rag_system():
@@ -173,8 +184,8 @@ def mock_rag_system():
         "This is a test response about MCP.",
         [
             {"text": "MCP Course - Lesson 1", "link": "https://example.com/lesson1"},
-            {"text": "MCP Course - Lesson 2", "link": "https://example.com/lesson2"}
-        ]
+            {"text": "MCP Course - Lesson 2", "link": "https://example.com/lesson2"},
+        ],
     )
 
     # Mock analytics
@@ -182,8 +193,8 @@ def mock_rag_system():
         "total_courses": 2,
         "course_titles": [
             "MCP: Build Rich-Context AI Apps with Anthropic",
-            "Advanced RAG Techniques"
-        ]
+            "Advanced RAG Techniques",
+        ],
     }
 
     return mock_rag
@@ -192,10 +203,10 @@ def mock_rag_system():
 @pytest.fixture
 def test_app(mock_rag_system):
     """Create a test FastAPI app without static file mounting"""
+
     from fastapi import FastAPI, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
     from pydantic import BaseModel
-    from typing import List, Optional
 
     # Create test app
     app = FastAPI(title="Course Materials RAG System - Test", root_path="")
@@ -212,20 +223,20 @@ def test_app(mock_rag_system):
     # Pydantic models
     class QueryRequest(BaseModel):
         query: str
-        session_id: Optional[str] = None
+        session_id: str | None = None
 
     class Source(BaseModel):
         text: str
-        link: Optional[str] = None
+        link: str | None = None
 
     class QueryResponse(BaseModel):
         answer: str
-        sources: List[Source]
+        sources: list[Source]
         session_id: str
 
     class CourseStats(BaseModel):
         total_courses: int
-        course_titles: List[str]
+        course_titles: list[str]
 
     # API Endpoints
     @app.post("/api/query", response_model=QueryResponse)
@@ -237,13 +248,11 @@ def test_app(mock_rag_system):
 
             answer, sources = mock_rag_system.query(request.query, session_id)
 
-            source_objects = [Source(**s) if isinstance(s, dict) else Source(text=s) for s in sources]
+            source_objects = [
+                Source(**s) if isinstance(s, dict) else Source(text=s) for s in sources
+            ]
 
-            return QueryResponse(
-                answer=answer,
-                sources=source_objects,
-                session_id=session_id
-            )
+            return QueryResponse(answer=answer, sources=source_objects, session_id=session_id)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -252,8 +261,7 @@ def test_app(mock_rag_system):
         try:
             analytics = mock_rag_system.get_course_analytics()
             return CourseStats(
-                total_courses=analytics["total_courses"],
-                course_titles=analytics["course_titles"]
+                total_courses=analytics["total_courses"], course_titles=analytics["course_titles"]
             )
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
@@ -270,16 +278,10 @@ def client(test_app):
 @pytest.fixture
 def sample_query_request():
     """Sample query request for API tests"""
-    return {
-        "query": "What is MCP?",
-        "session_id": None
-    }
+    return {"query": "What is MCP?", "session_id": None}
 
 
 @pytest.fixture
 def sample_query_request_with_session():
     """Sample query request with session ID for API tests"""
-    return {
-        "query": "Tell me more about MCP architecture",
-        "session_id": "existing-session-456"
-    }
+    return {"query": "Tell me more about MCP architecture", "session_id": "existing-session-456"}

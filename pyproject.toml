@@ -20,6 +20,11 @@ dependencies = [
 dev = [
     "pytest>=9.0.2",
     "httpx>=0.27.0",
+    "black>=24.10.0",
+    "isort>=5.13.2",
+    "ruff>=0.8.4",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.1",
 ]
 
 [tool.pytest.ini_options]
@@ -37,3 +42,75 @@ markers = [
     "unit: Unit tests for individual components",
     "api: API endpoint integration tests",
 ]
+
+[tool.black]
+line-length = 100
+target-version = ['py313']
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | __pycache__
+  | chroma_db
+  | \.pytest_cache
+  | \.ruff_cache
+  | \.mypy_cache
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+py_version = 312
+skip_gitignore = true
+known_first_party = ["config", "models", "rag_system", "vector_store", "ai_generator", "document_processor", "session_manager", "search_tools"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+exclude = [".git", ".venv", "__pycache__", "chroma_db", ".pytest_cache", ".ruff_cache", ".mypy_cache"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "N",   # pep8-naming
+    "UP",  # pyupgrade (use modern Python syntax)
+    "B",   # flake8-bugbear (find likely bugs)
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # Line too long (handled by Black)
+    "B008",  # Function call in argument defaults (FastAPI depends on this)
+    "SIM108",  # Use ternary operator (can reduce readability)
+    "B007",  # Loop control variable not used (acceptable pattern)
+    "B905",  # zip without strict= (not always necessary)
+    "I",  # isort rules (handled by isort tool)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401", "F811", "N806", "F841", "B904"]  # Allow unused imports, redefinitions, naming, unused vars, and exception chaining in tests
+"**/tests/*" = ["F401", "F811", "N806", "F841", "B904"]  # Same for nested test directories
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+exclude = ['.venv', 'chroma_db']
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "chromadb.*",
+    "sentence_transformers.*",
+    "portkey_ai.*"
+]
+ignore_missing_imports = true
