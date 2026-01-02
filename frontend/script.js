@@ -3,9 +3,10 @@ const API_URL = '/api';
 
 // Global state
 let currentSessionId = null;
+let currentTheme = 'dark';
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, totalCourses, courseTitles, newChatButton, themeToggle;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,8 +16,11 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
-    
+    newChatButton = document.getElementById('newChatButton');
+    themeToggle = document.getElementById('themeToggle');
+
     setupEventListeners();
+    loadThemePreference();
     createNewSession();
     loadCourseStats();
 });
@@ -28,8 +32,19 @@ function setupEventListeners() {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
-    
-    
+
+    // New chat button
+    newChatButton.addEventListener('click', createNewSession);
+
+    // Theme toggle
+    themeToggle.addEventListener('click', toggleTheme);
+    themeToggle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleTheme();
+        }
+    });
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -74,7 +89,7 @@ async function sendMessage() {
         if (!response.ok) throw new Error('Query failed');
 
         const data = await response.json();
-        
+
         // Update session ID if new
         if (!currentSessionId) {
             currentSessionId = data.session_id;
@@ -115,25 +130,32 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}${isWelcome ? ' welcome-message' : ''}`;
     messageDiv.id = `message-${messageId}`;
-    
+
     // Convert markdown to HTML for assistant messages
     const displayContent = type === 'assistant' ? marked.parse(content) : escapeHtml(content);
-    
+
     let html = `<div class="message-content">${displayContent}</div>`;
-    
+
     if (sources && sources.length > 0) {
+        const sourceLinks = sources.map(source => {
+            const text = escapeHtml(source.text || source);
+            if (source.link) {
+                return `<a href="${escapeHtml(source.link)}" target="_blank" rel="noopener">${text}</a>`;
+            }
+            return `<span class="source-text">${text}</span>`;
+        }).join('');
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <div class="sources-content">${sourceLinks}</div>
             </details>
         `;
     }
-    
+
     messageDiv.innerHTML = html;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     return messageId;
 }
 
@@ -158,15 +180,15 @@ async function loadCourseStats() {
         console.log('Loading course stats...');
         const response = await fetch(`${API_URL}/courses`);
         if (!response.ok) throw new Error('Failed to load course stats');
-        
+
         const data = await response.json();
         console.log('Course data received:', data);
-        
+
         // Update stats in UI
         if (totalCourses) {
             totalCourses.textContent = data.total_courses;
         }
-        
+
         // Update course titles
         if (courseTitles) {
             if (data.course_titles && data.course_titles.length > 0) {
@@ -177,7 +199,7 @@ async function loadCourseStats() {
                 courseTitles.innerHTML = '<span class="no-courses">No courses available</span>';
             }
         }
-        
+
     } catch (error) {
         console.error('Error loading course stats:', error);
         // Set default values on error
@@ -188,4 +210,30 @@ async function loadCourseStats() {
             courseTitles.innerHTML = '<span class="error">Failed to load courses</span>';
         }
     }
+}
+
+// Theme Management
+function toggleTheme() {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(currentTheme);
+    saveThemePreference(currentTheme);
+}
+
+function applyTheme(theme) {
+    const root = document.documentElement;
+    if (theme === 'light') {
+        root.classList.add('light-theme');
+    } else {
+        root.classList.remove('light-theme');
+    }
+    currentTheme = theme;
+}
+
+function loadThemePreference() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    applyTheme(savedTheme);
+}
+
+function saveThemePreference(theme) {
+    localStorage.setItem('theme', theme);
 }

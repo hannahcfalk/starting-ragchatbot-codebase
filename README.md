@@ -27,7 +27,7 @@ This application is a full-stack web application that enables users to query cou
    ```
 
 3. **Set up environment variables**
-   
+
    Create a `.env` file in the root directory:
    ```bash
    ANTHROPIC_API_KEY=your_anthropic_api_key_here
@@ -53,4 +53,3 @@ uv run uvicorn app:app --reload --port 8000
 The application will be available at:
 - Web Interface: `http://localhost:8000`
 - API Documentation: `http://localhost:8000/docs`
-
